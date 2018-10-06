@@ -10,103 +10,91 @@
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include <iostream>
+#include <vector>
 
 using namespace std;
+using namespace cv;
 
-void drawRegtangle(cv::Mat img, cv::Vec3b color);
-
-void rectang(cv::Mat image, cv::Vec3b color);
-
-void grayscale(cv::Mat image);
+void show_image(Mat img);
+Mat histogram(const Mat& img);
+Mat draw_histogram(const Mat& hist);
 
 int main(int argc, char* argv[])
 {
-    // Parse command line arguments -- the first positional argument expects an
-    // image path (the default is ./book_cover.jpg)
-    cv::CommandLineParser parser(argc, argv,
-        // name  | default value    | help message
-        "{help   |                  | print this message}"
-        "{@image | ./book_cover.jpg | image path}"
-    );
 
-    if (parser.has("help")) {
-        parser.printMessage();
-        return 0;
-    }
+  CommandLineParser parser(argc, argv,
+          "{help   |            | print this message}"
+          "{@image | ./lena.bmp | image path}"
+  );
 
-    // Load image file
-    string filepath = parser.get<std::string>("@image");
-    cv::Mat img = cv::imread(filepath);
-    cv::Mat imgout;
-
-    // Check that the image file was actually loaded
-    if (img.empty()) {
-        cout << "Input image not found at '" << filepath << "'\n";
-        return 1;
-    }
-
-    cv::Vec3b black = cv::Vec3b(0,0,0);
-    cv::Vec3b color = black;
-
-    //drawRegtangle(img, color);
-
-
-    //grayscale(img);
-    cvtColor(img, imgout, cv::COLOR_RGB2GRAY);
-    rectang(imgout, color);
-    cv::imshow("Image", imgout);
-    // Show the image
-
-
-
-    // Wait for escape key press before returning
-    while (cv::waitKey() != 27)
-        ; // (do nothing)
-
+  if (parser.has("help")){
+    parser.printMessage();
     return 0;
+  }
+
+      // Load image as grayscale
+  string filepath = parser.get<string>("@image");
+  Mat img = imread(filepath, IMREAD_GRAYSCALE); // Loads as grayscale
+
+  if(img.empty()){
+    cout << "No image found" << endl;
+    return -1;
+  }
+
+  Mat hist = histogram(img);
+  //imshow("Histgram", draw_histogram(hist));
+
+  Mat eqimg;
+  equalizeHist(img, eqimg);
+  imshow("Equalized image", eqimg);
+
+  Mat eqhist = histogram(eqimg);
+  imshow("Equlized histogram", eqhist);
+
+  // Printing the images
+  //show_image(img);
+
+  waitKey(0);
+  return 0;
 }
 
-void drawRegtangle(cv::Mat img, cv::Vec3b color){
 
-  for (int i = 100; i < 350; i++) {
-    img.at<cv::Vec3b>(220,i) = color;
-  }
 
-  for (int i = 100; i < 350; i++) {
-    img.at<cv::Vec3b>(440,i) = color;
-  }
 
-  for (int i = 220; i < 440; i++) {
-    img.at<cv::Vec3b>(i,100) = color;
-  }
 
-  for (int i = 220; i < 440; i++) {
-    img.at<cv::Vec3b>(i,350) = color;
-  }
+
+void show_image(Mat img){
+  namedWindow("Display window", WINDOW_NORMAL);
+  imshow("Display window", img);
 }
 
-void rectang(cv::Mat img, cv::Vec3b color){
-  int x = 100;
-  int y = 220;
-  int width = 250;
-  int height = 200 ;
-  cv::Point pt1(x, y);
-  cv::Point pt2(x + width, y + height);
+Mat histogram(const Mat& img){
 
-  cv::rectangle(img, pt1, pt2, color);
+  assert(img.type() == CV_8UC1);
+
+  Mat histogram;
+
+  calcHist(
+    vector<Mat>{img},
+    {0}, // Channels
+    noArray(), //mask
+    histogram, // Output histogram
+    {256}, // Hisogram size / Number of bins
+    {0, 256} // Pairs of bin lower and upper
+  );
+  return histogram;
 }
 
-void grayscale(cv::Mat img){
-  for (int i = 0; i < img.size[0]; i++) {
-    for (int j = 0; j < img.size[1]; j++) {
-      //cout << "R " << (double)img.at<cv::Vec3b>(i,j).val[0] << ", G " << (double)img.at<cv::Vec3b>(i,j).val[1] << ", B " << (double)img.at<cv::Vec3b>(i,j).val[2]  << endl;
-      img.at<cv::Vec3b>(i,j).val[0] = img.at<cv::Vec3b>(i,j).val[0] * 0.587; // B
-      img.at<cv::Vec3b>(i,j).val[1] = img.at<cv::Vec3b>(i,j).val[1] * 0.114; // G
-      img.at<cv::Vec3b>(i,j).val[2] = img.at<cv::Vec3b>(i,j).val[2] * 0.299; // R
-      //cout << "R " << (double)img.at<cv::Vec3b>(i,j).val[0] << ", G " << (double)img.at<cv::Vec3b>(i,j).val[1] << ", B " << (double)img.at<cv::Vec3b>(i,j).val[2]  << endl;
+Mat draw_histogram(const Mat& hist){
+  int nbins = hist.rows;
+  double max = 0;
+  minMaxLoc(hist, nullptr, &max);
+  Mat img(nbins, nbins, CV_8UC1, Scalar(255));
 
-    }
+  for (int i = 0; i < nbins; i++) {
+    double h = nbins *(hist.at<float>(i)/max); // Normalizie
+    line(img, Point(i, nbins), Point(i, nbins-h), Scalar::all(0));
   }
 
-
+  return img;
 }
