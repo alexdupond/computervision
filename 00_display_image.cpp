@@ -42,14 +42,14 @@ int main(int argc, char* argv[])
   }
 
   Mat hist = histogram(img);
-  //imshow("Histgram", draw_histogram(hist));
+  imshow("Histgram", draw_histogram(hist));
 
   Mat eqimg;
   equalizeHist(img, eqimg);
-  imshow("Equalized image", eqimg);
+  //imshow("Equalized image", eqimg);
 
   Mat eqhist = histogram(eqimg);
-  imshow("Equlized histogram", eqhist);
+  //imshow("Equlized histogram", eqhist);
 
   // Printing the images
   //show_image(img);
@@ -82,6 +82,7 @@ Mat histogram(const Mat& img){
     {256}, // Hisogram size / Number of bins
     {0, 256} // Pairs of bin lower and upper
   );
+  histogram.at<float>(0) = 0;
   return histogram;
 }
 
@@ -89,6 +90,7 @@ Mat draw_histogram(const Mat& hist){
   int nbins = hist.rows;
   double max = 0;
   minMaxLoc(hist, nullptr, &max);
+  cout << max << endl;
   Mat img(nbins, nbins, CV_8UC1, Scalar(255));
 
   for (int i = 0; i < nbins; i++) {
