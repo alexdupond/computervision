@@ -1,6 +1,7 @@
 git status
 git pull
 
+git add blabla.txt
 git commit -m "blabla"
 
 git push origin master
